@@ -8,7 +8,6 @@
 namespace esphome {
 namespace f60tdn {
 
-
 class F60tdnFan : public Component, public remote_base::RemoteReceiverListener, 
 public remote_base::RemoteTransmittable,
 public fan::Fan {
@@ -25,6 +24,7 @@ public fan::Fan {
  protected:
   void control(const fan::FanCall &call) override;
   void transmit_state();
+  void send_code();
   /// Handle received IR Buffer
   bool on_receive(remote_base::RemoteReceiveData data) override; 
   bool has_oscillating_{false};

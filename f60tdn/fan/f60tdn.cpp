@@ -35,6 +35,13 @@ namespace esphome
     // i/f yuragi mode
     const uint8_t FAN_YURAGI_MODE_ON = 0x40;
     const uint8_t FAN_YURAGI_MODE_OFF = 0x80;
+    
+    uint8_t remote_state[] = {
+          0x40, 0x04, 0x0B, 0x21,
+          0x8C, 0x80, 0x84, 0x0C,
+          0xF2, 0xB2, 0x0E, 0x81,
+          0xC1, 0x1A, 0x0A
+          };
 
     void F60tdnFan::setup()
     {
@@ -59,12 +66,11 @@ namespace esphome
         this->speed = *call.get_speed();
       if (call.get_oscillating().has_value() && this->has_oscillating_)
         this->oscillating = *call.get_oscillating();
-
       if (call.get_direction().has_value() && this->has_direction_)
         this->direction = *call.get_direction();
       this->preset_mode = call.get_preset_mode();
       this->transmit_state();
-      this->publish_state();
+      //this->publish_state();
     }
 
     bool F60tdnFan::on_receive(remote_base::RemoteReceiveData src)
@@ -120,7 +126,7 @@ namespace esphome
         }
         bytes_received[pos] = data;
       }
-      for(int i=0;i<14;i++){
+      for(int i=0;i<13;i++){
       ESP_LOGD(TAG, "Received bytes 0x%02X",bytes_received[i]);
       }
       auto powerMode = bytes_received[5];
@@ -189,13 +195,31 @@ namespace esphome
       return true;
     }
 
+    void F60tdnFan::send_code(){
+      auto transmit = this->transmitter_->transmit();
+      auto data = transmit.get_data();
+      data->set_carrier_frequency(38000);
+      data->reserve(2 + 32 + (13 * 2) + 1);
+      data->item(HEADER_HIGH_US, HEADER_LOW_US);
+      for (uint8_t bit : remote_state)
+      {
+        for (uint8_t mask = 1 << 7; mask != 0; mask >>= 1)
+        {
+          if (bit & mask)
+          {
+            data->item(BIT_HIGH_US, BIT_ONE_LOW_US);
+          }
+          else
+          {
+            data->item(BIT_HIGH_US, BIT_ZERO_LOW_US);
+          }
+        }
+      }
+      data->mark(TRAILER);
+      transmit.perform();
+    }
+    
     void F60tdnFan::transmit_state(){
-      uint8_t remote_state[] = {
-          0x40, 0x04, 0x0B, 0x21,
-          0x8C, 0x80, 0x84, 0x0C,
-          0xF2, 0xB2, 0x0E, 0x81,
-          0xC1, 0x1A, 0x0A
-          };
       auto powerMode = this->state;
       auto yuragiMode = this->oscillating;
       int fanSpeed = this->speed;
@@ -262,28 +286,9 @@ namespace esphome
       remote_state[14] = checksum;
 
       ESP_LOGD(TAG, "Send some bytes start with checksum 0x%02X", checksum);
-
-      auto transmit = this->transmitter_->transmit();
-      auto data = transmit.get_data();
-      data->set_carrier_frequency(38000);
-      data->reserve(2 + 32 + (13 * 2) + 1);
-      data->item(HEADER_HIGH_US, HEADER_LOW_US);
-      for (uint8_t bit : remote_state)
-      {
-        for (uint8_t mask = 1 << 7; mask != 0; mask >>= 1)
-        {
-          if (bit & mask)
-          {
-            data->item(BIT_HIGH_US, BIT_ONE_LOW_US);
-          }
-          else
-          {
-            data->item(BIT_HIGH_US, BIT_ZERO_LOW_US);
-          }
-        }
-      }
-      data->mark(TRAILER);
-      transmit.perform();
+      this->send_code();    
+      delay(50);
+      this->send_code();
     }
 
   } // namespace f60tdn
