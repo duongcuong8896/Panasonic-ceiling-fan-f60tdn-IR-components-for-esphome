@@ -1,5 +1,5 @@
 ## Coppy folder "f60tdn" to folder "my_components" esphome
-
+Example:
 ```C++
 remote_receiver:
   id: rcvr
