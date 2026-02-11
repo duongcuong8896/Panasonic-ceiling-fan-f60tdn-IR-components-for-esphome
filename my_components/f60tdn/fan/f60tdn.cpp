@@ -151,29 +151,37 @@ namespace esphome
                 bytes_received[pos] = data;
             }
 
-            // Log bytes 0-12 (bytes 13-14 là checksum/control)
+            // Log bytes với index
+            ESP_LOGD(TAG, "=== Received data ===");
             for (int i = 0; i < 13; i++)
             {
-                ESP_LOGD(TAG, "Received bytes 0x%02X", bytes_received[i]);
+                ESP_LOGD(TAG, "bytes[%d] = 0x%02X", i, bytes_received[i]);
             }
 
-            auto powerMode = bytes_received[7];
-            auto fanSpeed = bytes_received[6];
-            auto yuragiMode = bytes_received[5];
+            // ✓ Index đúng theo mapping:
+            // bytes_received[3] = remote_state[5] = yuragi
+            // bytes_received[4] = remote_state[6] = speed
+            // bytes_received[5] = remote_state[7] = power
+            auto yuragiMode = bytes_received[3];
+            auto fanSpeed = bytes_received[4];
+            auto powerMode = bytes_received[5];
 
- 
+            ESP_LOGD(TAG, "Parsed: power=0x%02X, speed=0x%02X, yuragi=0x%02X",
+                     powerMode, fanSpeed, yuragiMode);
+
+            
             switch (powerMode)
             {
             case FAN_OFF:
                 this->state = false;
-                this->first_on_temp_ = 0; 
+                this->first_on_temp_ = 0; // SỬA: Dùng this->first_on_temp_
                 break;
             case FAN_ON:
                 this->state = true;
                 break;
             case FAN_FIRST_ON:
                 this->state = true;
-                this->first_on_temp_ = 1; 
+                this->first_on_temp_ = 1; // SỬA: Dùng this->first_on_temp_
                 break;
             default:
                 break;
@@ -279,7 +287,7 @@ namespace esphome
             auto yuragiMode = this->oscillating;
             int fanSpeed = this->speed;
 
-            // GIỮ NGUYÊN logic first_on như code gốc của bạn
+            
             // SỬA: Dùng this->first_on_temp_ và this->remote_state_
             if (powerMode == true && this->first_on_temp_ == 1)
             {

@@ -29,7 +29,7 @@ namespace esphome
             void send_code();
             bool on_receive(remote_base::RemoteReceiveData data) override;
 
-            // SỬA LỖI: Chuyển từ biến toàn cục thành biến thành viên
+
             // để mỗi quạt có state riêng
             uint16_t address_{0x0000};
             uint8_t first_on_temp_{0};
