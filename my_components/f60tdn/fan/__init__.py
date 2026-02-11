@@ -7,7 +7,7 @@ from .. import f60tdn_ns
 F60tdnFan = f60tdn_ns.class_("F60tdnFan", cg.Component, fan.Fan, remote_base.RemoteReceiverListener,
                              remote_base.RemoteTransmittable,)
 CONF_HAS_OSCILLATING = "has_oscillating"
-CONFIG_SCHEMA = (fan.FAN_SCHEMA.extend(
+CONFIG_SCHEMA = (fan.fan_schema(F60tdnFan).extend(
     {
         cv.GenerateID(CONF_OUTPUT_ID): cv.declare_id(F60tdnFan),
         cv.Optional(CONF_SPEED_COUNT, default=9): cv.int_range(min=1, max=256),
